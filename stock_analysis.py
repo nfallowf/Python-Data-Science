@@ -12,8 +12,8 @@ import plotHelpers as plot
 import database_operations as db
 from pathlib import Path
 
-useDate = True                     # Option to limit stock info to a date range
-SAVE_TO_DB = True                 # Set to true to insert stock info to db after lookup
+useDate = False                     # Option to limit stock info to a date range
+SAVE_TO_DB = False                 # Set to true to insert stock info to db after lookup
 database = r".\db\pythonsqlite.db" # Location of database, must create db folder if it doesn't exist
 
 # If the stocks table doesn't already exist in the database, create it
@@ -33,6 +33,21 @@ def createStocksTable():
     conn.commit()
     conn.close()
     
+def createETFsTable():
+    sqlCreateETFsTable = """ CREATE TABLE IF NOT EXISTS etfs (
+                                        id integer PRIMARY KEY,
+                                        name text NOT NULL,
+                                        date text NOT NULL,
+                                        open real,
+                                        high real,
+                                        low real, 
+                                        close real,
+                                        volume real
+                                    ); """
+    conn = db.createConnection(database)
+    db.createTable(conn, sqlCreateETFsTable)
+    conn.commit()
+    conn.close()
 # Ask user to input a ticker symbol to lookup
 def getUserSymbol():
     type = input("Do you want to lookup a stock or an ETF?: ")
@@ -85,6 +100,15 @@ def insertStock(stock):
     conn.commit()
     conn.close()
 
+# Insert etf to database
+def insertETF(etf):
+    conn = db.createConnection(database)
+    count = db.assertETFEntry(conn, etf[0], etf[1])
+    if (len(count) == 0):
+        stocks = db.createETF(conn, etf)
+    conn.commit()
+    conn.close()
+    
 # Given a float, return it rounded to 2 decimal places, return the input value for all other inputs    
 def isNumber(s):
     try:
@@ -95,8 +119,8 @@ def isNumber(s):
         
 def main():
     Path("./db").mkdir(exist_ok=True)           # Create db folder if it doesn't exist
-    createStocksTable()                         # Create stocks table if it doesnt exist
-    selectedType, stock = getUserSymbol()       # Get the stock to lookyp from the user
+    createStocksTable()                         # Create stocks table if it doesn't exist
+    selectedType, stock = getUserSymbol()       # Get the stock to lookup from the user
     df = createDataframe(selectedType, stock)   # Create dataframe containing data about a stock, pulled from a csv file
     
     # Optionally limit the data to a specific date range (improves database performance by limiting data if using large dataset)
@@ -105,18 +129,23 @@ def main():
         df = (df.loc[beginDate:endDate])
         
     # Plot the closing daily price as well as the 100 day rolling average closing price
+    """
     if(len(df.index) > 100):
         plot.plotData(df['Close'], df['RA'])
     else:
         plot.plotData(df['Close'])
-    
+    """
     plot.plotVolume(df)
     
     if (SAVE_TO_DB):
         # Inserting the selected stock into the database
         for index, row in df.iterrows():
             stockData = (stock, index.date().strftime("%Y/%m/%d") ,row['Open'], row['High'], row['Low'], row['Close'], row['Volume'])
-            insertStock(stockData)
+            if (selectedType == 'Stocks/'):
+                insertStock(stockData)
+            else:
+                insertETF(stockData)
     getAllStocks()
+    
 if __name__ == '__main__':
     main()

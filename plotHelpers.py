@@ -1,5 +1,8 @@
 import matplotlib.pyplot as plt
 from matplotlib import style
+import numpy as np
+from scipy import stats
+
 style.use('ggplot')  
 
 # Plot closing price
@@ -23,3 +26,4 @@ def plotVolume(data):
     ax2.bar(data.index, data['Volume'])
     plt.show()
     plt.close()
+    

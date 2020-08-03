@@ -99,6 +99,37 @@ def assertStockEntry(conn, stock, date):
 
     return rows
 
+def createETF(conn, etf):
+    """
+    Add etf data to to the database
+    :param conn:
+    :param task:
+    :return:
+    """
+
+    sql = ''' INSERT INTO etfs(name,date,open,high,low,close,volume)
+              VALUES(?,?,?,?,?,?,?) '''
+    cur = conn.cursor()
+    
+    cur.execute(sql, etf)
+    conn.commit()
+
+    return cur.lastrowid
+    
+def assertStockEntry(conn, etf, date):
+    """
+    Query database to check the existence of a etf entry on a particular day
+    Used to disallow duplicate entries
+    :param conn: the Connection object
+    :return:
+    """
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM stocks WHERE name ='" + etf + "' AND date='"+date+"'")
+
+    rows = cur.fetchall()
+
+    return rows    
+
 def deleteAllStock(conn, stock):
     """
     Delete all db entries for a particular ticker
