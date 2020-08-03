@@ -1,11 +1,19 @@
+"""
+Author Nathan Fallowfield
+Python script to lookup and plot stock information
+Data can be store in an sqllite database, CRUD functionality is provided in database_operations.py
+Script uses pandas to create dataframes from the csv fiels allowing easy data manipulation.
+Data is plotted via Matplotlib, supporting functions are found in plotHelpers.py
+Program assumes .csv files containing stock or ETF data can be found in ./Stocks and ./ETFs respectively.
+"""
+
 import pandas as pd
 import plotHelpers as plot
 import database_operations as db
 from pathlib import Path
 
-                                   # Style for matplotlib plots
 useDate = True                     # Option to limit stock info to a date range
-SAVE_TO_DB = False                 # Set to true to insert stock info to db after lookup
+SAVE_TO_DB = True                 # Set to true to insert stock info to db after lookup
 database = r".\db\pythonsqlite.db" # Location of database, must create db folder if it doesn't exist
 
 # If the stocks table doesn't already exist in the database, create it
@@ -25,6 +33,7 @@ def createStocksTable():
     conn.commit()
     conn.close()
     
+# Ask user to input a ticker symbol to lookup
 def getUserSymbol():
     type = input("Do you want to lookup a stock or an ETF?: ")
     if (type == "stock"):
@@ -56,7 +65,8 @@ def getAllStocks():
     for item in stocks:
         list = [isNumber(i) for i in item]
         print(list)
-    
+
+# Return all data about a particular stock
 def getStockByTicker(stock):
     conn = db.createConnection(database)
     stocks = db.selectStockByTicker(conn, stock)
@@ -65,7 +75,8 @@ def getStockByTicker(stock):
     for item in stocks:
         list = [isNumber(i) for i in item]
         print(list)
-    
+
+# Insert stock to database
 def insertStock(stock):
     conn = db.createConnection(database)
     count = db.assertStockEntry(conn, stock[0], stock[1])
@@ -88,18 +99,17 @@ def main():
     selectedType, stock = getUserSymbol()       # Get the stock to lookyp from the user
     df = createDataframe(selectedType, stock)   # Create dataframe containing data about a stock, pulled from a csv file
     
-    # Optionally limit the data to a specific date range (improves database performance)
+    # Optionally limit the data to a specific date range (improves database performance by limiting data if using large dataset)
     if useDate:
         beginDate, endDate = getDateRange()
         df = (df.loc[beginDate:endDate])
         
     # Plot the closing daily price as well as the 100 day rolling average closing price
-    """
     if(len(df.index) > 100):
         plot.plotData(df['Close'], df['RA'])
     else:
         plot.plotData(df['Close'])
-    """
+    
     plot.plotVolume(df)
     
     if (SAVE_TO_DB):
@@ -107,6 +117,6 @@ def main():
         for index, row in df.iterrows():
             stockData = (stock, index.date().strftime("%Y/%m/%d") ,row['Open'], row['High'], row['Low'], row['Close'], row['Volume'])
             insertStock(stockData)
-    
+    getAllStocks()
 if __name__ == '__main__':
     main()

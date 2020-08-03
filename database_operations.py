@@ -40,7 +40,20 @@ def selectStockByTicker(conn, stock):
     rows = cur.fetchall()
 
     return rows
-        
+
+def selectStockByDate(conn, date):
+    """
+    Query all rows in database matching a specific trading day
+    :param conn: the Connection object
+    :return:
+    """
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM stocks WHERE date ='" + date +"'")
+
+    rows = cur.fetchall()
+
+    return rows
+    
 def createTable(conn, createTableSQL):
     """ create a table from the create_table_sql statement
     :param conn: Connection object
@@ -74,7 +87,8 @@ def createStock(conn, stock):
     
 def assertStockEntry(conn, stock, date):
     """
-    Query all rows in database matching a specific stock ticker symbol and date
+    Query database to check the existence of a stock entry on a particular day
+    Used to disallow duplicate entries
     :param conn: the Connection object
     :return:
     """
@@ -84,3 +98,48 @@ def assertStockEntry(conn, stock, date):
     rows = cur.fetchall()
 
     return rows
+
+def deleteAllStock(conn, stock):
+    """
+    Delete all db entries for a particular ticker
+    :param conn:
+    :param task:
+    :return:
+    """
+
+    cur = conn.cursor()
+    
+    cur.execute("DELETE FROM stocks WHERE name ='" + stock +"'")
+    conn.commit()
+
+    return cur.lastrowid
+
+def deleteStockByDate(conn, stock, date):
+    """
+    Delete a specific day's entry for a specific ticker
+    :param conn:
+    :param task:
+    :return:
+    """
+
+    cur = conn.cursor()
+    
+    cur.execute("DELETE FROM stocks WHERE name ='" + stock + "' AND date='"+date+"'")
+    conn.commit()
+
+    return cur.lastrowid
+    
+def updateStockName(conn, stock, newName):
+    """
+    Delete a specific day's entry for a specific ticker
+    :param conn:
+    :param task:
+    :return:
+    """
+
+    cur = conn.cursor()
+    
+    cur.execute("UPDATE stocks SET name ='" + newName + "' WHERE name ='" + stock +"'")
+    conn.commit()
+
+    return cur.lastrowid
